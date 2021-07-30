@@ -4,10 +4,16 @@
   <meta charset="utf-8">
   <title>Organization Chart Plugin</title>
   <link rel="icon" href="img/logo.png">
+  <link rel="stylesheet" href="css/generatebox.css">
   <link rel="stylesheet" href="css/jquery.orgchart.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <div>
+    <textarea id="data" name="" id="" cols="30" rows="10"></textarea>
+    <button id="generate">Generate</button>
+    <input id="filename" placeholder="Filename">
+  </div>
   <div id="chart-container"></div>
 
   <script src="js/jquery.min.js"></script>
@@ -17,7 +23,67 @@
   <script type="text/javascript" src="js/jspdf.umd.min.js"></script>
   <script type="text/javascript" src="js/jquery.orgchart.js"></script>
   <script type="text/javascript">
-    $(function() {
+  $(function() {
+    // Get filename from query params
+    $('#filename').val((new URL(location.href)).searchParams.get('filename'));
+
+    // Text area setup for tab
+    $('#data').keydown(function(e) {
+      if (e.key == 'Tab') {
+        e.preventDefault();
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+
+        // set textarea value to: text before caret + tab + text after caret
+        this.value = this.value.substring(0, start) +
+          "\t" + this.value.substring(end);
+
+        // put caret at right position again
+        this.selectionStart =
+          this.selectionEnd = start + 1;
+      }
+    });
+
+    // Convert text into json
+    $('#generate').click(() => {
+      let data;
+      let rows = $('#data').val().split('\n');
+      let currentLevel = 0, parents = [], lastRow;
+      rows.forEach(row => {
+          if (!row.length) return;
+          let indentation = row.split(/[a-z](.+)/i)[0];
+          let info = row.substr(indentation.length);
+          let [name, title] = info.split('|');
+          let rowData = { name, title };
+          let localCurrentLevel = indentation.length;
+          if (localCurrentLevel > currentLevel) {
+            currentLevel = localCurrentLevel;
+            parents.push(lastRow);
+          } else if (localCurrentLevel < currentLevel) {
+            parents.pop();
+            currentLevel = localCurrentLevel;
+          }
+          if (parents.length) {
+            let parent = parents[parents.length - 1];
+            if (!parent.children) {
+              parent.children = [];
+            }
+            parent.children.push(rowData);
+          } else {
+            data = rowData;
+          }
+          lastRow = rowData;
+        });
+
+        $('#chart-container').empty();
+        $('#chart-container').orgchart({
+          'data' : data,
+          'nodeContent': 'title',
+          'exportButton': true,
+          'exportFilename': $('#filename').val()
+        });
+
+    });
 
     var datascource = {
       'name': 'Lao Lao',
@@ -46,7 +112,6 @@
 
     $('#chart-container').orgchart({
       'data' : datascource,
-      'visibleLevel': 2,
       'nodeContent': 'title',
       'exportButton': true,
       'exportFileextension': 'pdf',
