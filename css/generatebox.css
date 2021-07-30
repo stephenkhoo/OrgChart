@@ -1,0 +1,18 @@
+#data {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 420px;
+  border: 1px solid #aaa;
+  margin: 0.5rem;
+  overflow: auto;
+  -moz-tab-size : 2;
+    -o-tab-size : 2;
+       tab-size : 2;
+}
+
+#generate,
+#filename {
+  margin-left: 0.5rem;
+  padding: 0.5rem 1rem;
+}
